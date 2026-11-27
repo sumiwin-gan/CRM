@@ -73,11 +73,6 @@ textarea{resize:vertical}
 .login{max-width:380px;margin:0 auto;padding:60px 16px}
 .logo{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--pd),var(--p));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:24px;margin:0 auto 14px}
 .hint{font-size:12px;color:var(--mut);margin-top:4px}
-.kbox{border:1px dashed #cbd5e1;border-radius:12px;padding:10px 12px 12px;margin-top:10px;background:#f8fafc}
-.kbox input{margin-top:7px}
-.kbox .lnk{background:none;border:0;color:#dc2626;font-weight:700;font-size:13px;cursor:pointer}
-.kt{border-top:1px solid var(--bd);padding-top:10px;margin-top:10px}
-.kt:first-of-type{border-top:0}
 
 /* ===== TAMPILAN PC / LAYAR LEBAR ===== */
 @media(min-width:900px){
@@ -183,8 +178,6 @@ const MON=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','De
 function fmtD(s){if(!s)return '-';const p=String(s).slice(0,10).split('-');if(p.length<3)return s;return +p[2]+' '+MON[+p[1]-1]+' '+p[0]+(s.length>10?' '+s.slice(11,16):'');}
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function waNum(t){let n=String(t||'').replace(/\D/g,'');if(n.startsWith('0'))n='62'+n.slice(1);else if(n.startsWith('8'))n='62'+n;return n;}
-function kontakOf(l){let x=[];try{x=l.kontakLain?JSON.parse(l.kontakLain):[];}catch(e){}return [{nama:l.pic,jabatan:l.jabatan,telepon:l.telepon,email:l.email}].concat(Array.isArray(x)?x:[]).filter(c=>c&&(c.nama||c.telepon||c.email));}
-function kontakText(l){return kontakOf(l).map(c=>[c.nama,c.jabatan,c.telepon,c.email].join(' ')).join(' ');}
 function getLead(id){return S.d.leads.find(l=>l.id===id);}
 function sortLeads(a){return a.slice().sort((x,y)=>(y.diubah||y.tanggal).localeCompare(x.diubah||x.tanggal)||y.id.localeCompare(x.id));}
 function fuOf(id){return S.d.fu.filter(f=>f.leadId===id).sort((a,b)=>b.tanggal.localeCompare(a.tanggal)||b.id.localeCompare(a.id));}
@@ -246,13 +239,13 @@ function rLeads(){
 }
 function drawList(){
   const q=S.q.trim().toLowerCase();
-  const L=sortLeads(S.d.leads).filter(l=>(!S.fl||l.statusLead===S.fl)&&(!S.fs||(S.fs==='Belum'?!l.sales:l.statusSales===S.fs))&&(!q||[l.perusahaan,kontakText(l),l.kota,l.detailSumber,l.kebutuhan].join(' ').toLowerCase().includes(q)));
+  const L=sortLeads(S.d.leads).filter(l=>(!S.fl||l.statusLead===S.fl)&&(!S.fs||(S.fs==='Belum'?!l.sales:l.statusSales===S.fs))&&(!q||[l.perusahaan,l.pic,l.telepon,l.kota,l.detailSumber,l.kebutuhan].join(' ').toLowerCase().includes(q)));
   if(!L.length){$('#list').innerHTML='<div class="empty">Belum ada lead</div>';return;}
   $('#list').innerHTML=L.map(l=>{
     const lf=lastFU(l.id);
     return `<div class="card lead" onclick="openLead('${l.id}')">
       <div class="row"><div class="nm">${esc(l.perusahaan)}</div><span class="b ${l.statusLead}">${l.statusLead}</span></div>
-      <div class="sm mut">${esc(l.pic||'-')}${l.telepon?' · '+esc(l.telepon):''}${kontakOf(l).length>1?' · +'+(kontakOf(l).length-1)+' kontak':''}</div>
+      <div class="sm mut">${esc(l.pic||'-')}${l.telepon?' · '+esc(l.telepon):''}</div>
       <div class="sm mut">${esc(l.sumber||'-')}${l.detailSumber?' · '+esc(l.detailSumber):''}</div>
       <div class="row sm mt"><span>${S.d.user.peran==='Sales'?'Dari: '+esc(l.marketing):(l.sales?'Sales: <b>'+esc(l.sales)+'</b>':'<span class="mut">Belum diserahkan</span>')}</span>${l.sales?`<span class="b ${l.statusSales}">${l.statusSales}</span>`:''}</div>
       <div class="sm mut">Follow up terakhir: ${lf?fmtD(lf):'belum ada'}</div>
@@ -270,15 +263,12 @@ function openLead(id){
   const canSS=!!l.sales&&(r==='Admin'||(r==='Sales'&&l.sales===me));
   const fus=fuOf(id);
   const realCnt=fus.filter(f=>!SYS.includes(f.metode)).length;
-  const inf=[['Kota',l.kota],['Kebutuhan',l.kebutuhan],['Sumber Data',l.sumber],['Event / Detail',l.detailSumber],['Marketing',l.marketing],['Tanggal',fmtD(l.tanggal)],['Catatan',l.catatan]];
+  const inf=[['PIC',l.pic],['Jabatan',l.jabatan],['Telepon',l.telepon],['Email',l.email],['Kota',l.kota],['Kebutuhan',l.kebutuhan],['Sumber Data',l.sumber],['Event / Detail',l.detailSumber],['Marketing',l.marketing],['Tanggal',fmtD(l.tanggal)],['Catatan',l.catatan]];
   let h=`<div class="mhd"><button onclick="closeM()">‹ Kembali</button><b>Detail Lead</b>${canEdit?`<button onclick="editLead('${id}')">Edit</button>`:'<span style="width:50px"></span>'}</div>`;
   h+=`<div class="card"><div class="row"><h2>${esc(l.perusahaan)}</h2><span class="b ${l.statusLead}">${l.statusLead}</span></div>
      <div class="info">${inf.map(x=>`<span class="k">${x[0]}</span><span>${esc(x[1]||'-')}</span>`).join('')}</div>
+     ${l.telepon?`<div class="acts"><a class="btn sm ghost" href="tel:${esc(String(l.telepon).replace(/[^\d+]/g,''))}">Telepon</a><a class="btn sm wa" href="https://wa.me/${waNum(l.telepon)}" target="_blank">WhatsApp</a></div>`:''}
   </div>`;
-  const KS=kontakOf(l);
-  h+=`<div class="card"><div class="ttl">Kontak (${KS.length})</div>`+(KS.length?KS.map((c,i)=>`<div class="kt"><div class="row"><b>${esc(c.nama||'-')}</b>${i?'':'<span class="b">Utama</span>'}</div>
-     <div class="sm mut">${esc(c.jabatan||'')}${c.jabatan&&c.telepon?' · ':''}${esc(c.telepon||'')}</div>${c.email?`<div class="sm mut">${esc(c.email)}</div>`:''}
-     ${c.telepon?`<div class="acts" style="margin-top:8px"><a class="btn sm ghost" href="tel:${esc(String(c.telepon).replace(/[^\d+]/g,''))}">Telepon</a><a class="btn sm wa" href="https://wa.me/${waNum(c.telepon)}" target="_blank">WhatsApp</a></div>`:''}</div>`).join(''):'<div class="mut sm mt">Belum ada kontak</div>')+'</div>';
   // Penyerahan ke sales
   h+='<div class="card"><div class="ttl">Diserahkan ke Sales</div>';
   if(l.sales){
@@ -375,27 +365,18 @@ function readFile(f){
 }
 
 /* ========== LEAD FORM ========== */
-let KF=[];
-function kfRender(){
-  const b=$('#kfBox');if(!b)return;
-  b.innerHTML=KF.map((c,i)=>`<div class="kbox"><div class="row"><b class="sm">${i?'Kontak '+(i+1):'Kontak Utama'}</b>${KF.length>1?`<button type="button" class="lnk" onclick="KF.splice(${i},1);kfRender()">Hapus</button>`:''}</div>
-    <input placeholder="Nama PIC" value="${esc(c.nama)}" oninput="KF[${i}].nama=this.value">
-    <input placeholder="Jabatan (Purchasing / Owner / ...)" value="${esc(c.jabatan)}" oninput="KF[${i}].jabatan=this.value">
-    <input type="tel" placeholder="No. Telepon / WA" value="${esc(c.telepon)}" oninput="KF[${i}].telepon=this.value">
-    <input type="email" placeholder="Email" value="${esc(c.email)}" oninput="KF[${i}].email=this.value"></div>`).join('')+
-    `<button type="button" class="btn sm ghost mt" onclick="KF.push({nama:'',jabatan:'',telepon:'',email:''});kfRender()">+ Tambah Kontak</button>`;
-}
 function leadForm(l,isNew){
   l=l||{};
-  KF=l.id?kontakOf(l).map(c=>({nama:c.nama||'',jabatan:c.jabatan||'',telepon:c.telepon||'',email:c.email||''})):[];
-  if(!KF.length)KF=[{nama:'',jabatan:'',telepon:'',email:''}];
   const isAdm=S.d.user.peran==='Admin';
   const sumber=S.d.sumber.slice();if(l.sumber&&!sumber.includes(l.sumber))sumber.push(l.sumber);
   const f=(k,lab,ph,type)=>`<label>${lab}</label><input id="lf_${k}" ${type?`type="${type}"`:''} value="${esc(l[k]||'')}" placeholder="${esc(ph||'')}">`;
   return `<div class="card">
     <label>Tanggal</label><input type="date" id="lf_tanggal" value="${esc(l.tanggal||todayStr())}" ${isNew||isAdm?'':'disabled'}>
     ${f('perusahaan','Nama Perusahaan *','PT ...')}
-    <label>Kontak / PIC</label><div id="kfBox"></div>
+    ${f('pic','Nama PIC','Nama kontak')}
+    ${f('jabatan','Jabatan PIC','Purchasing / Owner / ...')}
+    ${f('telepon','No. Telepon / WA','08...','tel')}
+    ${f('email','Email','','email')}
     ${f('kota','Kota / Alamat','')}
     ${f('kebutuhan','Kebutuhan','Produk, perkiraan volume, dll')}
     <label>Sumber Data *</label><select id="lf_sumber">${opts(sumber,l.sumber||'','— pilih —')}</select>
@@ -406,15 +387,14 @@ function leadForm(l,isNew){
     <button class="btn full" onclick="saveLead('${l.id||''}')">Simpan Lead</button>
   </div>`;
 }
-function rInput(){$('#main').innerHTML='<div class="card" style="margin-bottom:0"><div class="ttl">Input Lead Baru</div><div class="sm mut">Isi data calon customer dari event, online, atau sumber lain.</div></div>'+leadForm(null,true);kfRender();}
+function rInput(){$('#main').innerHTML='<div class="card" style="margin-bottom:0"><div class="ttl">Input Lead Baru</div><div class="sm mut">Isi data calon customer dari event, online, atau sumber lain.</div></div>'+leadForm(null,true);}
 function editLead(id){
   const l=getLead(id);
   openM(`<div class="mhd"><button onclick="openLead('${id}')">‹ Batal</button><b>Edit Lead</b><span style="width:50px"></span></div>`+leadForm(l,false),id);
-  kfRender();
 }
 async function saveLead(id){
   const g=k=>{const e=$('#lf_'+k);return e?e.value.trim():'';};
-  const d={id,tanggal:g('tanggal'),perusahaan:g('perusahaan'),kontak:KF.map(c=>({nama:c.nama.trim(),jabatan:c.jabatan.trim(),telepon:c.telepon.trim(),email:c.email.trim()})),kota:g('kota'),kebutuhan:g('kebutuhan'),sumber:g('sumber'),detailSumber:g('detailSumber'),statusLead:SEG.lf,catatan:g('catatan')};
+  const d={id,tanggal:g('tanggal'),perusahaan:g('perusahaan'),pic:g('pic'),jabatan:g('jabatan'),telepon:g('telepon'),email:g('email'),kota:g('kota'),kebutuhan:g('kebutuhan'),sumber:g('sumber'),detailSumber:g('detailSumber'),statusLead:SEG.lf,catatan:g('catatan')};
   if(!id)d.sales=g('sales');
   if(!d.perusahaan)return toast('Nama perusahaan wajib diisi',1);
   if(!d.sumber)return toast('Pilih sumber data',1);
