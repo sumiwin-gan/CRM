@@ -175,7 +175,7 @@ const MENU=[['Utama'],['dash','Dashboard'],['leads','Data Leads'],['fu','Follow 
   ['Laporan'],['rmkt','Laporan Marketing'],['rsales','Laporan Sales'],['rsumber','Laporan Sumber Data'],
   ['Pengaturan'],['users','Pengguna'],['msumber','Master Sumber Data'],['mmetode','Master Metode Follow Up']];
 const PERIOD_MENUS=['dash','leads','fu','rmkt','rsales','rsumber'];
-let B={token:null,d:null,menu:'dash',from:'',to:'',f:{},editUser:null,mlist:[],mj:''};
+let B={pf:'all',token:null,d:null,menu:'dash',from:'',to:'',f:{},editUser:null,mlist:[],mj:''};
 const SEG={};
 const $=s=>document.querySelector(s);
 
@@ -270,8 +270,10 @@ function pDash(){
   const k=[['Total Leads',L.length,''],['Cold',n(l=>l.statusLead==='Cold'),'Cold'],['Warm',n(l=>l.statusLead==='Warm'),'Warm'],['Hot',n(l=>l.statusLead==='Hot'),'Hot'],
     ['Diserahkan ke Sales',ser,''],['Progres',n(l=>l.statusSales==='Progres'),'Progres'],['Quotation',n(l=>l.statusSales==='Quotation'),'Quotation'],['Deal',deal,'Deal'],
     ['Total Follow Up',F.length,''],['Konversi Deal',pct(deal,ser),'Deal']];
-  B.poster={title:'Dashboard Marketing',kpis:k.map(x=>[x[0],x[1],x[2]]),sections:[{h:'Leads per Sumber Data',type:'bars',data:group(L,'sumber')},{h:'Follow Up per Metode',type:'bars',data:group(F,'metode')}]};
-  $('#pg').innerHTML=dlBar()+'<div class="kpis">'+k.map(x=>`<div class="kpi"><span>${x[0]}</span><b class="${x[2]?'t'+x[2]:''}">${x[1]}</b></div>`).join('')+'</div>'+
+  B.poster=posterSpec('Dashboard Marketing',L,F,{hero:['DEAL',deal,'Konversi '+pct(deal,ser)+' dari lead diserahkan'],
+    stats:[['Total Leads',L.length,''],['Hot',n(l=>l.statusLead==='Hot'),'Hot'],['Follow Up',F.length,''],['Diserahkan',ser,'Progres']],
+    people:[{title:'Kinerja Marketing',kind:'mkt',list:pplMkt(L,F)},{title:'Kinerja Sales',kind:'sales',list:pplSales(L.filter(l=>l.sales),F)}]});
+  $('#pg').innerHTML=dlBar(true)+'<div class="kpis">'+k.map(x=>`<div class="kpi"><span>${x[0]}</span><b class="${x[2]?'t'+x[2]:''}">${x[1]}</b></div>`).join('')+'</div>'+
     `<div class="grid2"><div class="panel"><h3>Leads per Sumber Data</h3>${bars(group(L,'sumber'))}</div><div class="panel"><h3>Follow Up per Metode</h3>${bars(group(F,'metode'))}</div></div>
      <div class="panel"><h3>Follow Up Terbaru</h3>${fuTable(F.slice(0,10),false)}</div>`;
 }
@@ -279,7 +281,7 @@ function pDash(){
 /* ========== DATA LEADS ========== */
 function pLeads(){
   const f=B.f,Ls=B.d.leads;
-  $('#pg').innerHTML=dlBar()+`<div class="filters">
+  $('#pg').innerHTML=dlBar(true)+`<div class="filters">
     <input placeholder="Cari perusahaan, PIC, telepon, kota, event..." value="${esc(f.q||'')}" oninput="B.f.q=this.value;drawLeads()">
     <select onchange="B.f.sl=this.value;drawLeads()">${opts(ST_LEAD,f.sl,'Semua status lead')}</select>
     <select onchange="B.f.ss=this.value;drawLeads()"><option value="">Semua status sales</option><option value="Belum" ${f.ss==='Belum'?'selected':''}>Belum diserahkan</option>${opts(ST_SALES,f.ss)}</select>
@@ -295,9 +297,10 @@ function drawLeads(){
   const cnt={},last={};
   realFU().forEach(x=>{cnt[x.leadId]=(cnt[x.leadId]||0)+1;if(!last[x.leadId])last[x.leadId]=x.tanggal;});
   const cn=fn=>L.filter(fn).length;
-  B.poster={title:'Data Leads',kpis:[['Total Leads',L.length,''],['Hot',cn(l=>l.statusLead==='Hot'),'Hot'],['Diserahkan',cn(l=>l.sales),''],['Deal',cn(l=>l.statusSales==='Deal'),'Deal']],
-    sections:[{h:'Daftar Leads',type:'table',head:['Tanggal','Perusahaan','PIC','Sumber','Marketing','Status','Sales','Status Sales'],widths:[1,2.2,1.4,1.4,1.1,0.9,1.2,1.3],align:'llllllll',boldCol:1,
-      rows:L.map(l=>[sD(l.tanggal),l.perusahaan,l.pic||'-',l.sumber||'-',l.marketing,l.statusLead,l.sales||'-',l.sales?l.statusSales:'Belum'])}]};
+  const FP=realFU().filter(x=>inP(x.tanggal));
+  B.poster=posterSpec('Data Leads',L,FP,{hero:['TOTAL LEADS',L.length,cn(l=>l.sales)+' lead sudah diserahkan ke sales'],
+    stats:[['Hot',cn(l=>l.statusLead==='Hot'),'Hot'],['Diserahkan',cn(l=>l.sales),'Progres'],['Quotation',cn(l=>l.statusSales==='Quotation'),'Quotation'],['Deal',cn(l=>l.statusSales==='Deal'),'Deal']],
+    people:[{title:'Kinerja Marketing',kind:'mkt',list:pplMkt(L,FP)},{title:'Kinerja Sales',kind:'sales',list:pplSales(L.filter(l=>l.sales),FP)}]});
   $('#ltbl').innerHTML=`<div class="cnt">${L.length} lead</div>`+(L.length?`<div class="tw"><table><thead><tr><th>Tanggal</th><th>Perusahaan</th><th>PIC</th><th>Telepon</th><th>Sumber</th><th>Event / Detail</th><th>Marketing</th><th>Status Lead</th><th>Sales</th><th>Status Sales</th><th class="n">FU</th><th>FU Terakhir</th></tr></thead><tbody>`+
     L.map(l=>`<tr class="click" onclick="openLead('${l.id}')"><td>${fmtD(l.tanggal)}</td><td><b>${esc(l.perusahaan)}</b></td><td>${esc(l.pic)}${kontakOf(l).length>1?`<div class="sm mut">+${kontakOf(l).length-1} kontak</div>`:''}</td><td>${esc(l.telepon)}</td><td>${esc(l.sumber)}</td><td>${esc(l.detailSumber)}</td><td>${esc(l.marketing)}</td><td>${badge(l.statusLead)}</td><td>${esc(l.sales||'-')}</td><td>${l.sales?badge(l.statusSales):'<span class="mut sm">Belum diserahkan</span>'}</td><td class="n">${cnt[l.id]||0}</td><td>${last[l.id]?fmtD(last[l.id]):'-'}</td></tr>`).join('')+
     '</tbody></table></div>':'<div class="panel empty">Tidak ada data</div>');
@@ -424,9 +427,13 @@ function drawFU(){
   const f=B.f,q=(f.fq||'').trim().toLowerCase();
   const F=realFU().filter(x=>inP(x.tanggal)&&(!f.fo||x.oleh===f.fo)&&(!f.fm||x.metode===f.fm)&&(!f.fs||x.statusLead===f.fs)&&(!q||[(lead(x.leadId)||{}).perusahaan,x.hasil].join(' ').toLowerCase().includes(q)));
   const cm=fn=>F.filter(fn).length;
-  B.poster={title:'Laporan Follow Up',kpis:[['Total Follow Up',F.length,''],['Lead Difollow Up',new Set(F.map(x=>x.leadId)).size,''],['Status Hot',cm(x=>x.statusLead==='Hot'),'Hot'],['Pengguna Aktif',new Set(F.map(x=>x.oleh)).size,'']],
-    sections:[{h:'Follow Up per Metode',type:'bars',data:group(F,'metode')},{h:'Daftar Follow Up',type:'table',head:['Tanggal','Perusahaan','Oleh','Metode','Hasil / Reason','Status'],widths:[1,2,1.1,1.6,3.2,0.9],align:'llllll',boldCol:1,
-      rows:F.map(x=>[sD(x.tanggal),(lead(x.leadId)||{}).perusahaan||'-',x.oleh,x.metode,String(x.hasil||'').replace(/\s+/g,' '),x.statusLead||'-'])}]};
+  const nl=new Set(F.map(x=>x.leadId)).size;
+  B.poster={title:'Laporan Follow Up',hero:['TOTAL FOLLOW UP',F.length,nl+' perusahaan dihubungi'],
+    stats:[['Lead Dihubungi',nl,''],['Status Hot',cm(x=>x.statusLead==='Hot'),'Hot'],['Pengguna Aktif',new Set(F.map(x=>x.oleh)).size,''],['Rata-rata / Lead',nl?(F.length/nl).toFixed(1):'0','Quotation']],
+    mid:{type:'bars',title:'Follow Up per Metode',data:group(F,'metode')},
+    people:[{title:'Follow Up per Orang',list:uniq(F.map(x=>x.oleh)).map(o=>{const x=F.filter(f=>f.oleh===o);return {name:o,note:(x[0]||{}).peran||'',sort:x.length,
+      metrics:[['Follow Up',x.length,''],['Lead',new Set(x.map(f=>f.leadId)).size,'Quotation'],['Hot',x.filter(f=>f.statusLead==='Hot').length,'Hot'],['WhatsApp',x.filter(f=>/whatsapp/i.test(f.metode)).length,'Deal']]};}).sort((a,b)=>b.sort-a.sort)}],
+    donut:{title:'Status Lead saat Follow Up',data:ST_LEAD.map(v=>[v,cm(x=>x.statusLead===v),PB[v]])}};
   $('#ftbl').innerHTML=`<div class="cnt">${F.length} follow up</div>`+fuTable(F,true);
 }
 
@@ -445,7 +452,9 @@ function pRMkt(){
     return [n,x.length,c(l=>l.statusLead==='Cold'),c(l=>l.statusLead==='Warm'),c(l=>l.statusLead==='Hot'),ser,deal,F.filter(f=>f.oleh===n).length,pct(deal,ser)];});
   const t=sumCols(rows,1);
   const HD=['Marketing','Leads','Cold','Warm','Hot','Diserahkan','Deal','Follow Up','Konversi'],TT=['TOTAL',t[1]||0,t[2]||0,t[3]||0,t[4]||0,t[5]||0,t[6]||0,t[7]||0,pct(t[6]||0,t[5]||0)];
-  B.poster={title:'Laporan Marketing',kpis:[['Total Leads',t[1]||0,''],['Hot',t[4]||0,'Hot'],['Diserahkan',t[5]||0,''],['Deal',t[6]||0,'Deal']],sections:[{h:'Kinerja Marketing',type:'table',head:HD,rows,total:TT}]};
+  B.poster=posterSpec('Laporan Marketing',L,F,{hero:['TOTAL LEADS',t[1]||0,(t[5]||0)+' lead diserahkan ke sales'],
+    stats:[['Hot',t[4]||0,'Hot'],['Diserahkan',t[5]||0,'Progres'],['Deal',t[6]||0,'Deal'],['Follow Up',t[7]||0,'']],
+    people:[{title:'Kinerja per Marketing',list:pplMkt(L,F)}]});
   $('#pg').innerHTML=dlBar()+'<div class="panel"><h3>Kinerja Marketing</h3><div class="sm mut" style="margin-bottom:10px">Lead dihitung dari tanggal input; follow up dihitung dari tanggal follow up.</div>'+
     tbl(HD,rows,TT)+'</div>';
 }
@@ -456,7 +465,12 @@ function pRSales(){
     return [n,x.length,c(l=>l.statusLead==='Hot'),c(l=>l.statusSales==='Progres'),c(l=>l.statusSales==='Quotation'),deal,F.filter(f=>f.oleh===n).length,pct(deal,x.length)];});
   const t=sumCols(rows,1);
   const HD=['Sales','Diterima','Hot','Progres','Quotation','Deal','Follow Up','Konversi'],TT=['TOTAL',t[1]||0,t[2]||0,t[3]||0,t[4]||0,t[5]||0,t[6]||0,pct(t[5]||0,t[1]||0)];
-  B.poster={title:'Laporan Sales',kpis:[['Lead Diterima',t[1]||0,''],['Quotation',t[4]||0,'Quotation'],['Deal',t[5]||0,'Deal'],['Konversi Deal',pct(t[5]||0,t[1]||0),'Deal']],sections:[{h:'Kinerja Sales',type:'table',head:HD,rows,total:TT}]};
+  const qd=(t[4]||0)+(t[5]||0);
+  B.poster={title:'Laporan Sales',hero:['DEAL',t[5]||0,'Konversi '+pct(t[5]||0,t[1]||0)+' dari lead yang diterima'],
+    stats:[['Lead Diterima',t[1]||0,''],['Progres',t[3]||0,'Progres'],['Quotation',t[4]||0,'Quotation'],['Follow Up',t[6]||0,'']],
+    mid:{type:'funnel',title:'Perjalanan Lead Sales',data:[['Lead Diterima',t[1]||0,'#3b82f6'],['Quotation',qd,'#60a5fa'],['Deal',t[5]||0,'#22c55e']]},
+    people:[{title:'Kinerja per Sales',list:pplSales(L,F)}],
+    donut:{title:'Status Sales',data:ST_SALES.map(v=>[v,L.filter(l=>l.statusSales===v).length,PB[v]])}};
   $('#pg').innerHTML=dlBar()+'<div class="panel"><h3>Kinerja Sales</h3><div class="sm mut" style="margin-bottom:10px">Lead dihitung dari tanggal diserahkan; status sales adalah status terkini.</div>'+
     tbl(HD,rows,TT)+'</div>';
 }
@@ -469,8 +483,12 @@ function pRSumber(){
   const H=['Leads','Cold','Warm','Hot','Diserahkan','Quotation','Deal','Konversi'];
   const t=sumCols(r1,1);
   const TT=['TOTAL',t[1]||0,t[2]||0,t[3]||0,t[4]||0,t[5]||0,t[6]||0,t[7]||0,pct(t[7]||0,t[5]||0)];
-  B.poster={title:'Laporan Sumber Data',kpis:[['Total Leads',t[1]||0,''],['Hot',t[4]||0,'Hot'],['Quotation',t[6]||0,'Quotation'],['Deal',t[7]||0,'Deal']],
-    sections:[{h:'Per Sumber Data',type:'table',head:['Sumber Data'].concat(H),rows:r1,total:TT},{h:'Per Event / Detail Sumber',type:'table',head:['Sumber — Event / Detail'].concat(H),rows:r2}]};
+  B.poster={title:'Laporan Sumber Data',hero:['TOTAL LEADS',t[1]||0,r1.length?'Terbanyak dari '+r1[0][0]+' ('+r1[0][1]+')':'Belum ada data'],
+    stats:[['Hot',t[4]||0,'Hot'],['Diserahkan',t[5]||0,'Progres'],['Quotation',t[6]||0,'Quotation'],['Deal',t[7]||0,'Deal']],
+    mid:{type:'bars',title:'Leads per Sumber Data',data:r1.map(r=>[r[0],r[1]])},
+    people:[{title:'Rincian per Sumber',list:r1.map(r=>({name:r[0],note:'Konversi '+r[8],metrics:[['Leads',r[1],''],['Diserahkan',r[5],'Progres'],['Quotation',r[6],'Quotation'],['Deal',r[7],'Deal']]}))},
+      {title:'Rincian per Event',list:r2.map(r=>({name:String(r[0]).split(' — ').pop(),note:String(r[0]).split(' — ')[0],metrics:[['Leads',r[1],''],['Diserahkan',r[5],'Progres'],['Quotation',r[6],'Quotation'],['Deal',r[7],'Deal']]}))}],
+    donut:{title:'Komposisi Sumber',data:r1.map((r,i)=>[r[0],r[1],PAL[i%PAL.length]])}};
   $('#pg').innerHTML=dlBar()+'<div class="panel"><h3>Per Sumber Data</h3>'+tbl(['Sumber Data'].concat(H),r1,TT)+'</div>'+
     '<div class="panel"><h3>Per Event / Detail Sumber</h3>'+tbl(['Sumber — Event / Detail'].concat(H),r2)+'</div>';
 }
@@ -517,67 +535,124 @@ function addM(){const v=$('#mNew').value.trim();if(!v)return;B.mlist.push(v);dra
 async function saveM(){await run('apiSaveMaster',[B.mj,B.mlist],'Master disimpan');}
 
 /* ========== UNDUH POSTER (PNG / PDF) ========== */
-function dlBar(){return '<div class="dlbar"><span class="sm mut">Unduh sebagai poster:</span><button class="btn sm ghost" onclick="dlPoster(\'png\')">Unduh PNG</button><button class="btn sm ghost" onclick="dlPoster(\'pdf\')">Unduh PDF</button></div>';}
+function dlBar(pick){return '<div class="dlbar">'+(pick?'<span class="sm mut">Tampilkan:</span><select onchange="B.pf=this.value"><option value="all"'+(B.pf==='all'?' selected':'')+'>Marketing &amp; Sales</option><option value="mkt"'+(B.pf==='mkt'?' selected':'')+'>Marketing saja</option><option value="sales"'+(B.pf==='sales'?' selected':'')+'>Sales saja</option></select>':'')+'<span class="sm mut">Unduh sebagai poster:</span><button class="btn sm ghost" onclick="dlPoster(\'png\')">Unduh PNG</button><button class="btn sm ghost" onclick="dlPoster(\'pdf\')">Unduh PDF</button></div>';}
 function sD(t){const p=String(t||'').slice(0,10).split('-');return p.length<3?String(t||'-'):p[2]+'/'+p[1]+'/'+p[0].slice(2);}
 function periodText(){if(!B.from&&!B.to)return 'Semua periode';return (B.from?fmtD(B.from):'Awal')+' – '+(B.to?fmtD(B.to):'Sekarang');}
 function nowStr(){const d=new Date();return ymd(d)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
 const PCOL={Cold:'#0369a1',Warm:'#b45309',Hot:'#b91c1c',Progres:'#6d28d9',Quotation:'#1d4ed8',Deal:'#15803d'};
 function rr(c,x,y,w,h,r){r=Math.min(r,h/2,w/2);c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
 function fitT(c,t,w){t=String(t==null?'':t);if(c.measureText(t).width<=w)return t;while(t.length&&c.measureText(t+'…').width>w)t=t.slice(0,-1);return t+'…';}
+const PB={Cold:'#38bdf8',Warm:'#fbbf24',Hot:'#f87171',Progres:'#a78bfa',Quotation:'#60a5fa',Deal:'#4ade80'};
+const PAL=['#60a5fa','#fbbf24','#4ade80','#f87171','#a78bfa','#22d3ee','#fb923c','#e879f9'];
+/* poster standar: corong lead + rincian per orang + donut status lead */
+function posterSpec(title,L,F,o){
+  const c=fn=>L.filter(fn).length,ser=c(l=>l.sales),qd=c(l=>l.statusSales==='Quotation'||l.statusSales==='Deal');
+  return {title,hero:o.hero,stats:o.stats,people:o.people||[],
+    mid:{type:'funnel',title:'Perjalanan Lead',data:[['Total Leads',L.length,'#3b82f6'],['Diserahkan ke Sales',ser,'#8b5cf6'],['Quotation',qd,'#60a5fa'],['Deal',c(l=>l.statusSales==='Deal'),'#22c55e']]},
+    donut:{title:'Status Lead',data:ST_LEAD.map(v=>[v,c(l=>l.statusLead===v),PB[v]])}};
+}
+function pplMkt(L,F){
+  const names=uniq(L.map(l=>l.marketing).concat(B.d.users.filter(u=>u.peran==='Marketing'&&u.aktif!=='Tidak').map(u=>u.nama)));
+  return names.map(n=>{const x=L.filter(l=>l.marketing===n),ser=x.filter(l=>l.sales).length,deal=x.filter(l=>l.statusSales==='Deal').length;
+    return {name:n,note:'Konversi '+pct(deal,ser),sort:x.length*1000+deal,
+      metrics:[['Leads',x.length,''],['Follow Up',F.filter(f=>f.oleh===n).length,'Quotation'],['Diserahkan',ser,'Progres'],['Deal',deal,'Deal']]};}).sort((a,b)=>b.sort-a.sort);
+}
+function pplSales(LS,F){
+  const names=uniq(LS.map(l=>l.sales).concat(B.d.sales));
+  return names.map(n=>{const x=LS.filter(l=>l.sales===n),deal=x.filter(l=>l.statusSales==='Deal').length;
+    return {name:n,note:'Konversi '+pct(deal,x.length),sort:deal*1000+x.length,
+      metrics:[['Diterima',x.length,''],['Follow Up',F.filter(f=>f.oleh===n).length,'Quotation'],['Quotation',x.filter(l=>l.statusSales==='Quotation').length,'Progres'],['Deal',deal,'Deal']]};}).sort((a,b)=>b.sort-a.sort);
+}
 function drawPoster(p){
-  const W=1080,PAD=60,IN=W-PAD*2,S=2,RH=48;
+  const W=1080,S=2,PAD=64,IN=W-PAD*2,CH=158,CG=18,DH=280;
+  const ppl=(p.people||[]).filter(g=>g.list&&g.list.length);
+  let H=572+52+318;
+  ppl.forEach(g=>{H+=34+50+Math.ceil(g.list.length/2)*(CH+CG)-CG;});
+  H+=34+DH+90;
   const F=(w,z)=>w+' '+z+'px "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif';
-  const kp=p.kpis||[],kRows=Math.ceil(kp.length/4);
-  p.sections.forEach(s=>{if(s.type==='table'&&!s.rows.length)s.rows=[['Tidak ada data'].concat(s.head.slice(1).map(()=>''))];});
-  let H=270+(kRows?kRows*136:0);
-  p.sections.forEach(s=>{H+=80+(s.type==='bars'?Math.max(1,s.data.length)*46:(s.rows.length+1+(s.total?1:0))*RH)+10;});
-  H+=90;
   const cv=document.createElement('canvas');cv.width=W*S;cv.height=H*S;
   const c=cv.getContext('2d');c.scale(S,S);c.textBaseline='alphabetic';
-  c.fillStyle='#ffffff';c.fillRect(0,0,W,H);
-  const g=c.createLinearGradient(0,0,W,230);g.addColorStop(0,'#1e3a8a');g.addColorStop(1,'#1d4ed8');c.fillStyle=g;c.fillRect(0,0,W,230);
-  c.fillStyle='rgba(255,255,255,0.07)';c.beginPath();c.arc(W-80,30,180,0,Math.PI*2);c.fill();
-  c.fillStyle='rgba(255,255,255,0.8)';c.font=F(700,20);c.fillText('CRM MARKETING',PAD,72);
-  c.fillStyle='#ffffff';c.font=F(800,50);c.fillText(fitT(c,p.title,IN),PAD,136);
-  c.fillStyle='rgba(255,255,255,0.9)';c.font=F(500,22);c.fillText('Periode: '+periodText(),PAD,184);
-  let y=270;
-  if(kRows){
-    const kw=(IN-3*16)/4;
-    kp.forEach((k,i)=>{const x=PAD+(i%4)*(kw+16),yy=y+Math.floor(i/4)*136;
-      rr(c,x,yy,kw,120,18);c.fillStyle='#f8fafc';c.fill();c.strokeStyle='#e2e8f0';c.lineWidth=2;c.stroke();
-      c.fillStyle='#64748b';c.font=F(600,17);c.fillText(fitT(c,k[0],kw-36),x+20,yy+38);
-      c.fillStyle=PCOL[k[2]]||'#0f172a';c.font=F(800,44);c.fillText(fitT(c,k[1],kw-36),x+20,yy+94);});
-    y+=kRows*136;
+  const circ=(x,y,r,col)=>{c.fillStyle=col;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();};
+  const txt=(t,x,y,font,col,align,max)=>{c.font=font;c.fillStyle=col;c.textAlign=align||'left';c.fillText(max?fitT(c,t,max):String(t),x,y);c.textAlign='left';};
+  const card=(x,y,w,h,r,fill,stroke)=>{rr(c,x,y,w,h,r);c.fillStyle=fill;c.fill();if(stroke){c.strokeStyle=stroke;c.lineWidth=1.5;c.stroke();}};
+  // latar
+  const g=c.createLinearGradient(0,0,W*0.5,H);g.addColorStop(0,'#0b1430');g.addColorStop(0.5,'#14245e');g.addColorStop(1,'#1e3a8a');c.fillStyle=g;c.fillRect(0,0,W,H);
+  circ(W-40,110,270,'rgba(96,165,250,0.13)');circ(W-40,110,170,'rgba(96,165,250,0.10)');circ(-70,H-120,230,'rgba(251,191,36,0.07)');circ(W+60,H*0.55,200,'rgba(96,165,250,0.06)');
+  // judul
+  txt('CRM MARKETING',PAD,92,F(800,20),'#fbbf24');
+  txt(String(p.title).toUpperCase(),PAD,170,F(900,68),'#ffffff','left',IN);
+  const pt=periodText();c.font=F(600,21);const pw=c.measureText(pt).width+44;
+  card(PAD,198,pw,44,22,'rgba(255,255,255,0.13)');txt(pt,PAD+22,227,F(600,21),'#e2e8f0');
+  // angka utama
+  const hy=280,hw=420,hh=250;
+  const hg=c.createLinearGradient(PAD,hy,PAD+hw,hy+hh);hg.addColorStop(0,'#fcd34d');hg.addColorStop(1,'#f59e0b');
+  card(PAD,hy,hw,hh,30,hg);circ(PAD+hw-40,hy+40,70,'rgba(255,255,255,0.18)');
+  txt(p.hero[0],PAD+34,hy+56,F(800,22),'#451a03','left',hw-68);
+  txt(p.hero[1],PAD+30,hy+178,F(900,124),'#1c1917','left',hw-60);
+  txt(p.hero[2],PAD+34,hy+222,F(600,19),'#451a03','left',hw-68);
+  const sx=PAD+hw+24,sw=(IN-hw-24-20)/2,sh=115;
+  (p.stats||[]).slice(0,4).forEach((k,i)=>{const x=sx+(i%2)*(sw+20),y=hy+Math.floor(i/2)*(sh+20);
+    card(x,y,sw,sh,22,'rgba(255,255,255,0.08)','rgba(255,255,255,0.14)');
+    txt(k[0],x+24,y+38,F(600,18),'#cbd5e1','left',sw-48);
+    txt(k[1],x+24,y+92,F(900,46),PB[k[2]]||'#ffffff','left',sw-48);});
+  // corong / batang
+  const my=572;txt(p.mid.title,PAD,my+30,F(800,28),'#ffffff','left',IN);
+  const area=my+52,ah=318,d=p.mid.data||[];
+  if(!d.length)txt('Belum ada data',PAD,area+40,F(500,22),'#94a3b8');
+  if(p.mid.type==='funnel'){
+    const n=d.length,gap=12,bh=Math.min(70,(ah-gap*(n-1))/n),first=Math.max(1,d[0]?d[0][1]:1),off=(ah-(n*bh+(n-1)*gap))/2;
+    d.forEach(([lab,v,col],i)=>{const w=IN*(1-0.5*i/Math.max(1,n-1)),x=PAD+(IN-w)/2,y=area+off+i*(bh+gap);
+      const fg=c.createLinearGradient(x,0,x+w,0);fg.addColorStop(0,col);fg.addColorStop(1,col+'cc');
+      card(x,y,w,bh,16,fg);
+      txt(lab,x+26,y+bh/2+8,F(700,22),'#ffffff','left',w-200);
+      txt(v,x+w-26,y+bh/2+11,F(900,32),'#ffffff','right');
+      if(i>0){c.font=F(900,32);const vw=c.measureText(String(v)).width;txt(Math.round(v/first*100)+'%',x+w-38-vw,y+bh/2+8,F(600,18),'rgba(255,255,255,0.75)','right');}});
+  }else{
+    const top=d.slice(0,5),mx=Math.max(1,...top.map(x=>x[1])),bh=48,gap=14,off=(ah-(top.length*bh+(top.length-1)*gap))/2;
+    top.forEach(([lab,v],i)=>{const y=area+off+i*(bh+gap),lx=PAD+250,lw=IN-250-80;
+      txt(lab,PAD,y+32,F(700,22),'#e2e8f0','left',235);
+      card(lx,y+8,lw,bh-16,16,'rgba(255,255,255,0.08)');
+      const bg2=c.createLinearGradient(lx,0,lx+lw,0);bg2.addColorStop(0,'#60a5fa');bg2.addColorStop(1,'#22d3ee');
+      card(lx,y+8,Math.max(28,lw*v/mx),bh-16,16,bg2);
+      txt(v,PAD+IN,y+34,F(900,28),'#ffffff','right');});
   }
-  p.sections.forEach(s=>{
-    y+=24;c.fillStyle='#0f172a';c.font=F(800,26);c.fillText(s.h,PAD,y+28);y+=56;
-    if(s.type==='bars'){
-      if(!s.data.length){c.fillStyle='#64748b';c.font=F(500,20);c.fillText('Belum ada data',PAD,y+28);y+=46;}
-      const mx=Math.max(1,...s.data.map(d=>d[1]));
-      s.data.forEach(([k,v])=>{
-        c.fillStyle='#334155';c.font=F(500,20);c.fillText(fitT(c,k,250),PAD,y+29);
-        const bx=PAD+270,bw=IN-270-70;rr(c,bx,y+13,bw,20,10);c.fillStyle='#eef2f7';c.fill();
-        rr(c,bx,y+13,Math.max(12,bw*v/mx),20,10);c.fillStyle='#1d4ed8';c.fill();
-        c.fillStyle='#0f172a';c.font=F(800,20);c.textAlign='right';c.fillText(String(v),PAD+IN,y+30);c.textAlign='left';y+=46;});
-    }else{
-      const n=s.head.length,top=y;let ws,hz,bz;
-      if(s.widths){const tw=s.widths.reduce((a,b)=>a+b,0);ws=s.widths.map(w=>w/tw*IN);hz=14;bz=16;}
-      else{const ow=Math.min(112,(IN-300)/(n-1));ws=[IN-ow*(n-1)].concat(Array(n-1).fill(ow));hz=ow<95?12:15;bz=ow<95?17:19;}
-      const xs=ws.map((w,i)=>PAD+ws.slice(0,i).reduce((a,b)=>a+b,0)),al=s.align||s.head.map((_,i)=>i?'r':'l'),bc=s.boldCol==null?0:s.boldCol;
-      const row=(cells,bg,bold,head)=>{
-        if(bg){c.fillStyle=bg;c.fillRect(PAD,y,IN,RH);}
-        cells.forEach((t,i)=>{const st=!head&&PCOL[t];c.fillStyle=head?'#475569':(st||'#0f172a');c.font=F(head||bold||i===bc||st?700:500,head?hz:bz);
-          if(al[i]==='r'){c.textAlign='right';c.fillText(fitT(c,t,ws[i]-18),xs[i]+ws[i]-10,y+31);c.textAlign='left';}
-          else c.fillText(fitT(c,t,ws[i]-18),xs[i]+(i?8:12),y+31);});
-        y+=RH;};
-      row(s.head,'#eef2ff',true,true);
-      s.rows.forEach((r,i)=>row(r,i%2?'#f8fafc':null,false,false));
-      if(s.total)row(s.total,'#e2e8f0',true,false);
-      c.strokeStyle='#e2e8f0';c.lineWidth=1.5;c.strokeRect(PAD,top,IN,y-top);
-    }
-    y+=10;
+  // rincian per orang
+  let y=area+ah;
+  const AV=['#3b82f6','#f59e0b','#22c55e','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899'];
+  ppl.forEach(gp=>{
+    y+=34;txt(gp.title,PAD,y+28,F(800,28),'#ffffff','left',IN);y+=50;
+    const cw=(IN-CG)/2;
+    gp.list.forEach((pp,i)=>{const x=PAD+(i%2)*(cw+CG),yy=y+Math.floor(i/2)*(CH+CG);
+      card(x,yy,cw,CH,24,'rgba(255,255,255,0.08)','rgba(255,255,255,0.14)');
+      circ(x+44,yy+42,22,AV[i%AV.length]);
+      txt(String(pp.name||'?').trim().charAt(0).toUpperCase(),x+44,yy+50,F(900,22),'#ffffff','center');
+      c.font=F(700,17);const nw=pp.note?c.measureText(pp.note).width:0;
+      txt(pp.name,x+78,yy+50,F(800,23),'#ffffff','left',cw-78-nw-40);
+      if(pp.note)txt(pp.note,x+cw-22,yy+49,F(700,17),'#fbbf24','right');
+      const mw=(cw-36)/4;
+      pp.metrics.forEach((m,j)=>{const mx=x+18+j*mw;
+        if(j)card(mx,yy+82,1.5,56,0,'rgba(255,255,255,0.12)');
+        txt(m[0],mx+mw/2,yy+100,F(600,15),'#94a3b8','center',mw-10);
+        txt(m[1],mx+mw/2,yy+136,F(900,34),PB[m[2]]||'#ffffff','center',mw-10);});
+    });
+    y+=Math.ceil(gp.list.length/2)*(CH+CG)-CG;
   });
-  c.fillStyle='#94a3b8';c.font=F(500,16);c.fillText('Dibuat '+fmtD(nowStr())+' oleh '+B.d.user.nama+' · CRM Marketing',PAD,H-36);
+  // donut
+  y+=34;card(PAD,y,IN,DH,26,'rgba(255,255,255,0.07)','rgba(255,255,255,0.13)');
+  const dd=(p.donut.data||[]).filter(x=>x[1]>0).slice(0,8),tot=dd.reduce((a,x)=>a+x[1],0);
+  txt(p.donut.title,PAD+28,y+46,F(800,24),'#ffffff','left',IN-56);
+  const cx=PAD+130,cy=y+162,R=76,LW=28;
+  c.lineWidth=LW;c.lineCap='butt';c.strokeStyle='rgba(255,255,255,0.10)';c.beginPath();c.arc(cx,cy,R,0,Math.PI*2);c.stroke();
+  let a0=-Math.PI/2;dd.forEach(([,v,col])=>{const a1=a0+v/tot*Math.PI*2;c.strokeStyle=col;c.beginPath();c.arc(cx,cy,R,a0,a1);c.stroke();a0=a1;});
+  txt(tot,cx,cy+10,F(900,36),'#ffffff','center');txt('total',cx,cy+32,F(600,14),'#94a3b8','center');
+  const two=dd.length>4,lx=PAD+270,colW=two?(IN-270-30)/2:Math.min(460,IN-270-30),rows=(two?Math.ceil(dd.length/2):dd.length)||1;
+  if(!dd.length)txt('Belum ada data',lx,cy+8,F(500,18),'#94a3b8');
+  dd.forEach(([lab,v,col],i)=>{const cc=i<rows?0:1,r=i%rows,xx=lx+cc*(colW+20),yy=cy-((rows-1)*40)/2+r*40;
+    circ(xx+8,yy-6,8,col);txt(lab,xx+26,yy,F(600,19),'#e2e8f0','left',colW-110);
+    txt(v+' · '+Math.round(v/tot*100)+'%',xx+colW-6,yy,F(800,19),'#ffffff','right');});
+  // footer
+  txt('Dibuat '+fmtD(nowStr())+' oleh '+B.d.user.nama,PAD,H-34,F(500,16),'rgba(255,255,255,0.55)');
+  txt('CRM MARKETING',W-PAD,H-34,F(800,16),'rgba(251,191,36,0.85)','right');
   return cv;
 }
 function makePdf(jpg,wPx,hPx,iw,ih){
@@ -600,7 +675,9 @@ function saveBlob(blob,name){const u=URL.createObjectURL(blob);const a=document.
 function dlPoster(type){
   if(!B.poster)return toast('Tidak ada laporan untuk diunduh',1);
   try{
-    const cv=drawPoster(JSON.parse(JSON.stringify(B.poster)));
+    const pp=JSON.parse(JSON.stringify(B.poster));
+    if(B.pf!=='all'&&pp.people)pp.people=pp.people.filter(g=>!g.kind||g.kind===B.pf);
+    const cv=drawPoster(pp);
     const name=(B.poster.title+' '+(B.from||'semua')+(B.to?' sd '+B.to:'')).replace(/[^\w\-]+/g,'-');
     if(type==='png'){cv.toBlob(b=>saveBlob(b,name+'.png'),'image/png');}
     else{
