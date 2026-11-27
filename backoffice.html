@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marketing Leads — Back Office</title>
+<style>
+:root{--p:#1d4ed8;--pd:#1e3a8a;--bg:#f1f5f9;--tx:#0f172a;--mut:#64748b;--bd:#e2e8f0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
+a{color:var(--p)}
+/* layout */
+#side{position:fixed;top:0;left:0;bottom:0;width:240px;background:linear-gradient(180deg,var(--pd),#172554);color:#fff;display:flex;flex-direction:column;z-index:10;transition:transform .2s}
+.brand{padding:20px 18px 14px;font-weight:800;font-size:18px}
+.brand small{display:block;font-weight:500;font-size:12px;opacity:.7}
+#menu{flex:1;overflow-y:auto;padding:4px 10px}
+#menu .grp{font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.55;margin:16px 8px 6px}
+#menu button{display:block;width:100%;text-align:left;background:none;border:0;color:#dbeafe;padding:9px 12px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:500}
+#menu button:hover{background:rgba(255,255,255,.08)}
+#menu button.on{background:#fff;color:var(--pd);font-weight:700}
+.me{padding:14px 18px;border-top:1px solid rgba(255,255,255,.12);font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.me button{background:rgba(255,255,255,.15);border:0;color:#fff;padding:6px 10px;border-radius:7px;cursor:pointer;font-size:12px}
+main{margin-left:240px;min-height:100vh}
+.top{background:#fff;border-bottom:1px solid var(--bd);padding:14px 22px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+.top h1{font-size:19px;flex:1;min-width:160px}
+#burger{display:none;background:none;border:0;font-size:22px;cursor:pointer}
+#period{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#pg{padding:20px 22px 40px}
+/* ui */
+input,select,textarea{padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:var(--tx)}
+input:disabled{background:#f1f5f9}
+textarea{width:100%;resize:vertical}
+label{display:block;font-size:12px;color:var(--mut);font-weight:600;margin:10px 0 4px}
+.btn{background:var(--p);color:#fff;border:0;border-radius:8px;padding:9px 16px;font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap}
+.btn.sm{padding:6px 11px;font-size:12px}
+.btn.ghost{background:#eef2ff;color:var(--p)}
+.btn.red{background:#dc2626}
+.btn.gray{background:#e2e8f0;color:#334155}
+.panel{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:16px}
+.panel h3{font-size:15px;margin-bottom:10px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:14px}
+.kpi span{font-size:12px;color:var(--mut);font-weight:600}
+.kpi b{display:block;font-size:26px;margin-top:4px}
+.tCold{color:#0369a1}.tWarm{color:#b45309}.tHot{color:#b91c1c}.tProgres{color:#6d28d9}.tQuotation{color:#1d4ed8}.tDeal{color:#15803d}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.bar{display:grid;grid-template-columns:140px 1fr 40px;gap:10px;align-items:center;margin:7px 0;font-size:13px}
+.bar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar div{background:#f1f5f9;border-radius:6px;height:12px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--p);border-radius:6px}
+.bar b{text-align:right}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.filters input{flex:1;min-width:220px}
+.cnt{font-size:12px;color:var(--mut);margin-bottom:6px}
+.tw{overflow-x:auto;background:#fff;border:1px solid var(--bd);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f8fafc;text-align:left;padding:10px;border-bottom:1px solid var(--bd);font-size:12px;color:#475569;white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+tr.click{cursor:pointer}
+tr.click:hover td{background:#f8fafc}
+tr.tot td{font-weight:800;background:#f8fafc}
+td.n,th.n{text-align:right}
+.b{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700;white-space:nowrap;background:#f1f5f9;color:#475569}
+.Cold{background:#e0f2fe!important;color:#0369a1!important;border-color:#7dd3fc!important}
+.Warm{background:#fef3c7!important;color:#b45309!important;border-color:#fcd34d!important}
+.Hot{background:#fee2e2!important;color:#b91c1c!important;border-color:#fca5a5!important}
+.Progres{background:#ede9fe!important;color:#6d28d9!important;border-color:#c4b5fd!important}
+.Quotation{background:#dbeafe!important;color:#1d4ed8!important;border-color:#93c5fd!important}
+.Deal{background:#dcfce7!important;color:#15803d!important;border-color:#86efac!important}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;padding:8px;border:1px solid #cbd5e1;background:#fff;border-radius:8px;font-weight:700;cursor:pointer;color:#334155}
+.empty{text-align:center;padding:26px;color:var(--mut)}
+.mut{color:var(--mut)}.sm{font-size:12px}.mt{margin-top:10px}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sp{flex:1}
+.frm{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0 14px}
+.frm input,.frm select{width:100%}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;z-index:30;overflow-y:auto;padding:30px 14px}
+.mbox{background:#fff;border-radius:14px;max-width:880px;margin:0 auto}
+.mh{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:16px 20px;border-bottom:1px solid var(--bd)}
+.mh h2{font-size:18px}
+.mh .x{background:none;border:0;font-size:26px;line-height:1;cursor:pointer;color:var(--mut)}
+.mbd{padding:16px 20px 22px}
+.mbd h3{font-size:14px;margin:18px 0 8px;padding-top:14px;border-top:1px solid var(--bd)}
+.info{display:grid;grid-template-columns:130px 1fr 130px 1fr;gap:6px 12px;margin-top:12px;font-size:13px;word-break:break-word}
+.info .k{color:var(--mut)}
+.fu{border-left:3px solid var(--p);padding:8px 11px;margin-top:8px;background:#f8fafc;border-radius:0 8px 8px 0}
+.fu.sys{border-left-color:#94a3b8;background:#f1f5f9}
+/* login */
+#login{max-width:380px;margin:0 auto;padding:80px 16px}
+.logo{width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,var(--pd),var(--p));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;margin:0 auto 12px}
+#login input{width:100%}
+#busy{position:fixed;inset:0;background:rgba(15,23,42,.3);display:none;align-items:center;justify-content:center;z-index:50}
+.spin{width:42px;height:42px;border:4px solid #fff;border-top-color:transparent;border-radius:50%;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#toast{position:fixed;right:20px;bottom:20px;background:#0f172a;color:#fff;padding:11px 16px;border-radius:10px;z-index:60;display:none;max-width:360px}
+#toast.err{background:#dc2626}
+@media(max-width:760px){
+  #side{transform:translateX(-100%)}
+  body.sideopen #side{transform:none;box-shadow:0 0 40px rgba(0,0,0,.3)}
+  main{margin-left:0}
+  #burger{display:block}
+  .grid2{grid-template-columns:1fr}
+  .info{grid-template-columns:110px 1fr}
+  #pg{padding:14px}
+}
+</style>
+</head>
+<body>
+
+<div id="login" style="display:none">
+  <div class="logo">ML</div>
+  <h2 style="text-align:center">Back Office</h2>
+  <p class="mut" style="text-align:center;margin-bottom:18px">Marketing Leads — khusus Admin</p>
+  <div class="panel">
+    <label>Nama</label><input id="lgNama">
+    <label>PIN</label><input id="lgPin" type="password" inputmode="numeric" maxlength="6" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn" style="width:100%;margin-top:16px;padding:11px" onclick="doLogin()">Masuk</button>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <aside id="side">
+    <div class="brand">Marketing Leads<small>Back Office</small></div>
+    <nav id="menu"></nav>
+    <div class="me"><span id="meName"></span><button onclick="if(confirm('Keluar?'))doLogout()">Keluar</button></div>
+  </aside>
+  <main>
+    <div class="top">
+      <button id="burger" onclick="document.body.classList.toggle('sideopen')">☰</button>
+      <h1 id="pgTitle"></h1>
+      <div id="period">
+        <select id="pPreset" onchange="setPreset(this.value)">
+          <option value="semua">Semua periode</option><option value="hari">Hari ini</option><option value="bulan">Bulan ini</option>
+          <option value="lalu">Bulan lalu</option><option value="30">30 hari terakhir</option><option value="tahun">Tahun ini</option><option value="custom">Custom</option>
+        </select>
+        <input type="date" id="pFrom" onchange="setCustom()"><span class="mut">s/d</span><input type="date" id="pTo" onchange="setCustom()">
+      </div>
+      <button class="btn ghost" onclick="reload()">Muat ulang</button>
+    </div>
+    <div id="pg"></div>
+  </main>
+</div>
+
+<div class="modal" id="mdl" onclick="if(event.target===this)closeM()"><div class="mbox" id="mbox"></div></div>
+<div id="busy"><div class="spin"></div></div>
+<div id="toast"></div>
+
+<script>
+/* ====== GANTI DENGAN URL WEB APP (Deploy > Web app), akhiran /exec ====== */
+const SCRIPT_URL='PASTE_URL_WEB_APP_DI_SINI';
+/* ======================================================================== */
+const IS_GAS=!!(window.google&&google.script&&google.script.run);
+if(!IS_GAS){
+  window.google={script:{run:(function mk(s,f){return new Proxy({},{get(_,k){
+    if(k==='withSuccessHandler')return h=>mk(h,f);
+    if(k==='withFailureHandler')return h=>mk(s,h);
+    return (...a)=>{
+      fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({fn:k,args:a})})
+        .then(r=>r.json()).then(j=>{if(j.ok)s&&s(j.r);else f&&f(new Error(j.err));})
+        .catch(()=>f&&f(new Error('Gagal terhubung ke server. Cek internet / SCRIPT_URL.')));
+    };}});})(null,null)}};
+}
+</script>
+<script>
+const ST_LEAD=['Cold','Warm','Hot'],ST_SALES=['Progres','Quotation','Deal'],SYS=['Penyerahan','Update Status'],ROLES=['Admin','Marketing','Sales'];
+const MENU=[['Utama'],['dash','Dashboard'],['leads','Data Leads'],['fu','Follow Up'],
+  ['Laporan'],['rmkt','Laporan Marketing'],['rsales','Laporan Sales'],['rsumber','Laporan Sumber Data'],
+  ['Pengaturan'],['users','Pengguna'],['msumber','Master Sumber Data'],['mmetode','Master Metode Follow Up']];
+const PERIOD_MENUS=['dash','leads','fu','rmkt','rsales','rsumber'];
+let B={token:null,d:null,menu:'dash',from:'',to:'',f:{},editUser:null,mlist:[],mj:''};
+const SEG={};
+const $=s=>document.querySelector(s);
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v);}catch(e){return null;}}
+function toast(m,err){const t=$('#toast');t.textContent=m;t.className=err?'err':'';t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',err?4500:2200);}
+function busy(on){$('#busy').style.display=on?'flex':'none';}
+function api(fn,...a){
+  return new Promise((res,rej)=>{
+    google.script.run.withSuccessHandler(res).withFailureHandler(e=>{
+      const m=String(e&&e.message||e).replace(/^Error:\s*/,'');
+      if(m.indexOf('SESI_HABIS')>=0){doLogout(true);rej(new Error('Sesi habis, silakan login lagi'));}
+      else rej(new Error(m));
+    })[fn](...a);
+  });
+}
+const MON=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+function fmtD(s){if(!s)return '-';const p=String(s).slice(0,10).split('-');if(p.length<3)return esc(s);return +p[2]+' '+MON[+p[1]-1]+' '+p[0]+(s.length>10?' '+s.slice(11,16):'');}
+function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function inP(t){const d=String(t||'').slice(0,10);if(!B.from&&!B.to)return true;if(!d)return false;if(B.from&&d<B.from)return false;if(B.to&&d>B.to)return false;return true;}
+function uniq(a){return [...new Set(a.filter(Boolean))].sort((x,y)=>x.localeCompare(y));}
+function pct(a,b){return b?Math.round(a/b*100)+'%':'-';}
+function lead(id){return B.d.leads.find(l=>l.id===id);}
+function realFU(){return B.d.fu.filter(f=>!SYS.includes(f.metode)).sort((a,b)=>b.tanggal.localeCompare(a.tanggal)||b.id.localeCompare(a.id));}
+function sortL(a){return a.slice().sort((x,y)=>(y.tanggal).localeCompare(x.tanggal)||y.id.localeCompare(x.id));}
+function opts(arr,cur,first){return (first!=null?`<option value="">${esc(first)}</option>`:'')+arr.map(v=>`<option ${v===cur?'selected':''}>${esc(v)}</option>`).join('');}
+function seg(name,vals,cur){SEG[name]=cur||'';return '<div class="seg">'+vals.map(v=>`<button type="button" data-v="${v}" class="${v===cur?'on '+v:''}" onclick="segSet(this,'${name}')">${v}</button>`).join('')+'</div>';}
+function segSet(b,name){SEG[name]=b.dataset.v;b.parentNode.querySelectorAll('button').forEach(x=>x.className='');b.className='on '+b.dataset.v;}
+function evLinks(s){let n=0;return String(s).split(/\s*\|\s*/).filter(Boolean).map(x=>/^https?:\/\/\S+$/i.test(x)?`<a href="${esc(x)}" target="_blank" onclick="event.stopPropagation()">Lihat file ${++n}</a>`:esc(x)).join(' · ');}
+function badge(v){return v?`<span class="b ${esc(v)}">${esc(v)}</span>`:'<span class="b">Belum</span>';}
+
+/* ========== AUTH ========== */
+async function doLogin(){
+  const n=$('#lgNama').value.trim(),p=$('#lgPin').value.trim();
+  if(!n||!p)return toast('Isi nama dan PIN',1);
+  busy(1);
+  try{const r=await api('apiLogin',n,p,'bo');B.token=r.token;B.d=r.data;ls('mlbo_tok',r.token);$('#lgPin').value='';showApp();}
+  catch(e){toast(e.message,1);}
+  busy(0);
+}
+function doLogout(silent){
+  if(!silent&&B.token){try{google.script.run.apiLogout(B.token);}catch(e){}}
+  B.token=null;B.d=null;ls('mlbo_tok',null);closeM();
+  $('#app').style.display='none';$('#login').style.display='block';
+}
+function showApp(){
+  if(B.d.user.peran!=='Admin'){toast('Back Office hanya untuk Admin',1);doLogout();return;}
+  $('#login').style.display='none';$('#app').style.display='block';$('#meName').textContent=B.d.user.nama;go(B.menu);
+}
+async function reload(){
+  busy(1);
+  try{B.d=await api('apiGetData',B.token);redraw();toast('Data diperbarui');}catch(e){toast(e.message,1);}
+  busy(0);
+}
+function redraw(){go(B.menu,true);const m=$('#mdl');if(m.style.display==='block'&&m.dataset.lead){if(lead(m.dataset.lead))openLead(m.dataset.lead);else closeM();}}
+
+/* ========== NAV & PERIODE ========== */
+function renderMenu(){
+  $('#menu').innerHTML=MENU.map(m=>m.length===1?`<div class="grp">${m[0]}</div>`:`<button class="${B.menu===m[0]?'on':''}" onclick="go('${m[0]}')">${m[1]}</button>`).join('');
+}
+function go(m,keep){
+  B.menu=m;renderMenu();
+  $('#pgTitle').textContent=MENU.find(x=>x[0]===m)[1];
+  $('#period').style.display=PERIOD_MENUS.includes(m)?'flex':'none';
+  $('#pFrom').value=B.from;$('#pTo').value=B.to;
+  PAGES[m]();
+  if(!keep)window.scrollTo(0,0);
+  document.body.classList.remove('sideopen');
+}
+function setPreset(v){
+  const t=new Date();
+  if(v==='hari'){B.from=B.to=ymd(t);}
+  else if(v==='bulan'){B.from=ymd(new Date(t.getFullYear(),t.getMonth(),1));B.to=ymd(t);}
+  else if(v==='lalu'){B.from=ymd(new Date(t.getFullYear(),t.getMonth()-1,1));B.to=ymd(new Date(t.getFullYear(),t.getMonth(),0));}
+  else if(v==='30'){const a=new Date(t);a.setDate(a.getDate()-29);B.from=ymd(a);B.to=ymd(t);}
+  else if(v==='tahun'){B.from=t.getFullYear()+'-01-01';B.to=ymd(t);}
+  else if(v==='semua'){B.from='';B.to='';}
+  else return;
+  go(B.menu,true);
+}
+function setCustom(){B.from=$('#pFrom').value;B.to=$('#pTo').value;$('#pPreset').value='custom';go(B.menu,true);}
+
+/* ========== DASHBOARD ========== */
+function group(arr,k){const m={};arr.forEach(x=>{const v=x[k]||'(kosong)';m[v]=(m[v]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
+function bars(g){if(!g.length)return '<div class="empty">Belum ada data</div>';const mx=g[0][1];return g.map(([k,v])=>`<div class="bar"><span title="${esc(k)}">${esc(k)}</span><div><i style="width:${Math.max(3,v/mx*100)}%"></i></div><b>${v}</b></div>`).join('');}
+function pDash(){
+  const L=B.d.leads.filter(l=>inP(l.tanggal)),F=realFU().filter(f=>inP(f.tanggal));
+  const n=fn=>L.filter(fn).length,ser=n(l=>l.sales),deal=n(l=>l.statusSales==='Deal');
+  const k=[['Total Leads',L.length,''],['Cold',n(l=>l.statusLead==='Cold'),'Cold'],['Warm',n(l=>l.statusLead==='Warm'),'Warm'],['Hot',n(l=>l.statusLead==='Hot'),'Hot'],
+    ['Diserahkan ke Sales',ser,''],['Progres',n(l=>l.statusSales==='Progres'),'Progres'],['Quotation',n(l=>l.statusSales==='Quotation'),'Quotation'],['Deal',deal,'Deal'],
+    ['Total Follow Up',F.length,''],['Konversi Deal',pct(deal,ser),'Deal']];
+  $('#pg').innerHTML='<div class="kpis">'+k.map(x=>`<div class="kpi"><span>${x[0]}</span><b class="${x[2]?'t'+x[2]:''}">${x[1]}</b></div>`).join('')+'</div>'+
+    `<div class="grid2"><div class="panel"><h3>Leads per Sumber Data</h3>${bars(group(L,'sumber'))}</div><div class="panel"><h3>Follow Up per Metode</h3>${bars(group(F,'metode'))}</div></div>
+     <div class="panel"><h3>Follow Up Terbaru</h3>${fuTable(F.slice(0,10),false)}</div>`;
+}
+
+/* ========== DATA LEADS ========== */
+function pLeads(){
+  const f=B.f,Ls=B.d.leads;
+  $('#pg').innerHTML=`<div class="filters">
+    <input placeholder="Cari perusahaan, PIC, telepon, kota, event..." value="${esc(f.q||'')}" oninput="B.f.q=this.value;drawLeads()">
+    <select onchange="B.f.sl=this.value;drawLeads()">${opts(ST_LEAD,f.sl,'Semua status lead')}</select>
+    <select onchange="B.f.ss=this.value;drawLeads()"><option value="">Semua status sales</option><option value="Belum" ${f.ss==='Belum'?'selected':''}>Belum diserahkan</option>${opts(ST_SALES,f.ss)}</select>
+    <select onchange="B.f.mk=this.value;drawLeads()">${opts(uniq(Ls.map(l=>l.marketing)),f.mk,'Semua marketing')}</select>
+    <select onchange="B.f.sa=this.value;drawLeads()">${opts(uniq(Ls.map(l=>l.sales)),f.sa,'Semua sales')}</select>
+    <select onchange="B.f.sb=this.value;drawLeads()">${opts(uniq(Ls.map(l=>l.sumber)),f.sb,'Semua sumber')}</select>
+  </div><div id="ltbl"></div>`;
+  drawLeads();
+}
+function drawLeads(){
+  const f=B.f,q=(f.q||'').trim().toLowerCase();
+  const L=sortL(B.d.leads).filter(l=>inP(l.tanggal)&&(!f.sl||l.statusLead===f.sl)&&(!f.ss||(f.ss==='Belum'?!l.sales:l.statusSales===f.ss))&&(!f.mk||l.marketing===f.mk)&&(!f.sa||l.sales===f.sa)&&(!f.sb||l.sumber===f.sb)&&(!q||[l.perusahaan,l.pic,l.telepon,l.kota,l.detailSumber,l.kebutuhan].join(' ').toLowerCase().includes(q)));
+  const cnt={},last={};
+  realFU().forEach(x=>{cnt[x.leadId]=(cnt[x.leadId]||0)+1;if(!last[x.leadId])last[x.leadId]=x.tanggal;});
+  $('#ltbl').innerHTML=`<div class="cnt">${L.length} lead</div>`+(L.length?`<div class="tw"><table><thead><tr><th>Tanggal</th><th>Perusahaan</th><th>PIC</th><th>Telepon</th><th>Sumber</th><th>Event / Detail</th><th>Marketing</th><th>Status Lead</th><th>Sales</th><th>Status Sales</th><th class="n">FU</th><th>FU Terakhir</th></tr></thead><tbody>`+
+    L.map(l=>`<tr class="click" onclick="openLead('${l.id}')"><td>${fmtD(l.tanggal)}</td><td><b>${esc(l.perusahaan)}</b></td><td>${esc(l.pic)}</td><td>${esc(l.telepon)}</td><td>${esc(l.sumber)}</td><td>${esc(l.detailSumber)}</td><td>${esc(l.marketing)}</td><td>${badge(l.statusLead)}</td><td>${esc(l.sales||'-')}</td><td>${l.sales?badge(l.statusSales):'<span class="mut sm">Belum diserahkan</span>'}</td><td class="n">${cnt[l.id]||0}</td><td>${last[l.id]?fmtD(last[l.id]):'-'}</td></tr>`).join('')+
+    '</tbody></table></div>':'<div class="panel empty">Tidak ada data</div>');
+}
+
+/* ========== DETAIL LEAD (MODAL) ========== */
+function openM(html,id){const m=$('#mdl');$('#mbox').innerHTML=html;m.dataset.lead=id||'';m.style.display='block';m.scrollTop=0;}
+function closeM(){const m=$('#mdl');m.style.display='none';m.dataset.lead='';}
+function openLead(id){
+  const l=lead(id);if(!l)return;
+  const fus=B.d.fu.filter(f=>f.leadId===id).sort((a,b)=>b.tanggal.localeCompare(a.tanggal)||b.id.localeCompare(a.id));
+  const inf=[['PIC',l.pic],['Jabatan',l.jabatan],['Telepon',l.telepon],['Email',l.email],['Kota',l.kota],['Kebutuhan',l.kebutuhan],['Sumber Data',l.sumber],['Event / Detail',l.detailSumber],['Marketing',l.marketing],['Tanggal Input',fmtD(l.tanggal)],['Catatan',l.catatan],['Terakhir Diubah',fmtD(l.diubah)]];
+  const salesList=B.d.sales.filter(s=>s!==l.sales);
+  openM(`<div class="mh"><div><h2>${esc(l.perusahaan)}</h2><div class="row mt">${badge(l.statusLead)}${l.sales?badge(l.statusSales):'<span class="b">Belum diserahkan</span>'}<span class="sm mut">${esc(l.id)}</span></div></div>
+    <div class="row"><button class="btn sm ghost" onclick="editLead('${id}')">Edit</button><button class="btn sm red" onclick="delLead('${id}')">Hapus</button><button class="x" onclick="closeM()">×</button></div></div>
+    <div class="mbd">
+      <div class="info">${inf.map(x=>`<span class="k">${x[0]}</span><span>${esc(x[1]||'-')}</span>`).join('')}</div>
+      <h3>Diserahkan ke Sales</h3>
+      ${l.sales?`<div>Sales: <b>${esc(l.sales)}</b> <span class="mut">· sejak ${fmtD(l.tglSerah)}</span></div>`:'<div class="mut">Belum diserahkan</div>'}
+      <div class="row mt"><select id="asSel">${opts(salesList,'',l.sales?'— pindahkan ke —':'— pilih sales —')}</select><button class="btn sm" onclick="assign('${id}')">${l.sales?'Pindahkan':'Serahkan'}</button></div>
+      ${l.sales?`<label>Status Sales</label><div style="max-width:420px">${seg('ss',ST_SALES,l.statusSales)}</div>
+        <div class="row mt"><input id="ssNote" placeholder="Catatan (opsional)" style="flex:1;min-width:200px"><button class="btn sm" onclick="saveSS('${id}')">Simpan Status</button></div>`:''}
+      <h3>Tambah Follow Up</h3>
+      <div class="frm">
+        <div><label>Metode *</label><select id="fu_metode">${opts(B.d.metode,'','— pilih —')}</select></div>
+        <div><label>Status Lead</label>${seg('fu',ST_LEAD,l.statusLead)}</div>
+        <div><label>Evidence (file)</label><input type="file" id="fu_file" accept="image/*,application/pdf"></div>
+        <div><label>Link evidence</label><input id="fu_link" placeholder="https://..."></div>
+      </div>
+      <label>Hasil / Reason *</label><textarea id="fu_hasil" rows="3"></textarea>
+      <button class="btn mt" onclick="saveFU('${id}')">Simpan Follow Up</button>
+      <h3>Riwayat Follow Up (${fus.filter(f=>!SYS.includes(f.metode)).length})</h3>
+      ${fus.length?fus.map(f=>`<div class="fu ${SYS.includes(f.metode)?'sys':''}"><div class="row"><b>${esc(f.metode)}</b><span class="mut sm">${fmtD(f.tanggal)} · ${esc(f.oleh)} (${esc(f.peran)})</span><span class="sp"></span>${!SYS.includes(f.metode)&&f.statusLead?badge(f.statusLead):''}<button class="btn sm gray" onclick="delFU('${f.id}')">Hapus</button></div>
+        <div style="white-space:pre-wrap;margin-top:4px">${esc(f.hasil)}</div>${f.evidence?`<div class="sm mt">Evidence: ${evLinks(f.evidence)}</div>`:''}</div>`).join(''):'<div class="mut">Belum ada follow up</div>'}
+    </div>`,id);
+}
+function editLead(id){
+  const l=lead(id);
+  const mk=B.d.marketing.slice();if(l.marketing&&!mk.includes(l.marketing))mk.push(l.marketing);
+  const sb=B.d.sumber.slice();if(l.sumber&&!sb.includes(l.sumber))sb.push(l.sumber);
+  const f=(k,lab,type)=>`<div><label>${lab}</label><input id="lf_${k}" ${type?`type="${type}"`:''} value="${esc(l[k]||'')}"></div>`;
+  openM(`<div class="mh"><h2>Edit Lead</h2><button class="x" onclick="openLead('${id}')">×</button></div><div class="mbd">
+    <div class="frm">${f('tanggal','Tanggal','date')}<div><label>Marketing</label><select id="lf_marketing">${opts(mk,l.marketing)}</select></div>
+    ${f('perusahaan','Perusahaan *')}${f('pic','PIC')}${f('jabatan','Jabatan')}${f('telepon','Telepon')}${f('email','Email')}${f('kota','Kota / Alamat')}${f('kebutuhan','Kebutuhan')}
+    <div><label>Sumber Data</label><select id="lf_sumber">${opts(sb,l.sumber,'— pilih —')}</select></div>${f('detailSumber','Nama Event / Detail')}
+    <div><label>Status Lead</label>${seg('lf',ST_LEAD,l.statusLead)}</div></div>
+    <label>Catatan</label><textarea id="lf_catatan" rows="3">${esc(l.catatan||'')}</textarea>
+    <div class="row mt"><button class="btn" onclick="saveLead('${id}')">Simpan</button><button class="btn gray" onclick="openLead('${id}')">Batal</button></div></div>`,id);
+}
+async function saveLead(id){
+  const g=k=>{const e=$('#lf_'+k);return e?e.value.trim():'';};
+  const d={id,tanggal:g('tanggal'),marketing:g('marketing'),perusahaan:g('perusahaan'),pic:g('pic'),jabatan:g('jabatan'),telepon:g('telepon'),email:g('email'),kota:g('kota'),kebutuhan:g('kebutuhan'),sumber:g('sumber'),detailSumber:g('detailSumber'),statusLead:SEG.lf,catatan:g('catatan')};
+  if(!d.perusahaan)return toast('Nama perusahaan wajib diisi',1);
+  await run('apiSaveLead',[d],'Lead tersimpan',()=>openLead(id));
+}
+async function assign(id){
+  const s=$('#asSel').value;if(!s)return toast('Pilih sales',1);
+  if(!confirm('Serahkan lead ke '+s+'?'))return;
+  await run('apiAssign',[id,s],'Diserahkan ke '+s);
+}
+async function saveSS(id){await run('apiSalesStatus',[id,SEG.ss,$('#ssNote').value],'Status sales disimpan');}
+async function saveFU(id){
+  const metode=$('#fu_metode').value,hasil=$('#fu_hasil').value.trim();
+  if(!metode)return toast('Pilih metode',1);if(!hasil)return toast('Isi hasil / reason',1);
+  busy(1);
+  let file=null;
+  try{const fl=$('#fu_file').files[0];if(fl)file=await readFile(fl);}catch(e){busy(0);return toast(e.message,1);}
+  busy(0);
+  await run('apiAddFU',[{leadId:id,metode,hasil,statusLead:SEG.fu,evidence:$('#fu_link').value.trim()},file],'Follow up tersimpan');
+}
+async function delLead(id){if(!confirm('Hapus lead ini beserta semua follow up-nya?'))return;await run('apiDeleteLead',[id],'Lead dihapus',closeM);}
+async function delFU(id){if(!confirm('Hapus follow up ini?'))return;await run('apiDeleteFU',[id],'Follow up dihapus');}
+async function run(fn,args,msg,after){
+  busy(1);
+  try{B.d=await api(fn,B.token,...args);toast(msg);go(B.menu,true);if(after)after();else{const m=$('#mdl');if(m.style.display==='block'&&m.dataset.lead){if(lead(m.dataset.lead))openLead(m.dataset.lead);else closeM();}}}
+  catch(e){toast(e.message,1);}
+  busy(0);
+}
+function readRaw(f){return new Promise((res,rej)=>{if(f.size>5*1024*1024)return rej(new Error('Ukuran file maksimal 5 MB'));const r=new FileReader();r.onload=()=>res({name:f.name,mime:f.type||'application/octet-stream',data:String(r.result).split(',')[1]});r.onerror=()=>rej(new Error('Gagal membaca file'));r.readAsDataURL(f);});}
+function readFile(f){
+  if(!f.type.startsWith('image/'))return readRaw(f);
+  return new Promise((res,rej)=>{const img=new Image(),url=URL.createObjectURL(f);
+    img.onload=()=>{let w=img.naturalWidth,h=img.naturalHeight;const m=1280;if(w>m||h>m){const k=Math.min(m/w,m/h);w=Math.round(w*k);h=Math.round(h*k);}
+      const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);URL.revokeObjectURL(url);
+      res({name:(f.name||'evidence').replace(/\.[^.]+$/,'')+'.jpg',mime:'image/jpeg',data:c.toDataURL('image/jpeg',0.75).split(',')[1]});};
+    img.onerror=()=>{URL.revokeObjectURL(url);readRaw(f).then(res,rej);};img.src=url;});
+}
+
+/* ========== FOLLOW UP ========== */
+function fuTable(F,withDel){
+  if(!F.length)return '<div class="empty">Belum ada follow up</div>';
+  return `<div class="tw"><table><thead><tr><th>Tanggal</th><th>Perusahaan</th><th>Oleh</th><th>Metode</th><th>Hasil / Reason</th><th>Status Lead</th><th>Evidence</th>${withDel?'<th></th>':''}</tr></thead><tbody>`+
+    F.map(f=>{const l=lead(f.leadId)||{};return `<tr class="click" onclick="openLead('${f.leadId}')"><td style="white-space:nowrap">${fmtD(f.tanggal)}</td><td><b>${esc(l.perusahaan||'-')}</b></td><td>${esc(f.oleh)}<div class="sm mut">${esc(f.peran)}</div></td><td>${esc(f.metode)}</td><td style="white-space:pre-wrap;min-width:220px">${esc(f.hasil)}</td><td>${badge(f.statusLead)}</td><td>${f.evidence?evLinks(f.evidence):'-'}</td>${withDel?`<td><button class="btn sm gray" onclick="event.stopPropagation();delFU('${f.id}')">Hapus</button></td>`:''}</tr>`;}).join('')+'</tbody></table></div>';
+}
+function pFU(){
+  const f=B.f,F=realFU();
+  $('#pg').innerHTML=`<div class="filters">
+    <input placeholder="Cari perusahaan / isi follow up..." value="${esc(f.fq||'')}" oninput="B.f.fq=this.value;drawFU()">
+    <select onchange="B.f.fo=this.value;drawFU()">${opts(uniq(F.map(x=>x.oleh)),f.fo,'Semua pengguna')}</select>
+    <select onchange="B.f.fm=this.value;drawFU()">${opts(uniq(F.map(x=>x.metode)),f.fm,'Semua metode')}</select>
+    <select onchange="B.f.fs=this.value;drawFU()">${opts(ST_LEAD,f.fs,'Semua status lead')}</select>
+  </div><div id="ftbl"></div>`;
+  drawFU();
+}
+function drawFU(){
+  const f=B.f,q=(f.fq||'').trim().toLowerCase();
+  const F=realFU().filter(x=>inP(x.tanggal)&&(!f.fo||x.oleh===f.fo)&&(!f.fm||x.metode===f.fm)&&(!f.fs||x.statusLead===f.fs)&&(!q||[(lead(x.leadId)||{}).perusahaan,x.hasil].join(' ').toLowerCase().includes(q)));
+  $('#ftbl').innerHTML=`<div class="cnt">${F.length} follow up</div>`+fuTable(F,true);
+}
+
+/* ========== LAPORAN ========== */
+function tbl(head,rows,total){
+  if(!rows.length)return '<div class="panel empty">Tidak ada data</div>';
+  return `<div class="tw"><table><thead><tr>${head.map((h,i)=>`<th class="${i?'n':''}">${h}</th>`).join('')}</tr></thead><tbody>`+
+    rows.map(r=>`<tr>${r.map((c,i)=>`<td class="${i?'n':''}">${i?c:'<b>'+esc(c)+'</b>'}</td>`).join('')}</tr>`).join('')+
+    (total?`<tr class="tot">${total.map((c,i)=>`<td class="${i?'n':''}">${c}</td>`).join('')}</tr>`:'')+'</tbody></table></div>';
+}
+function sumCols(rows,from){const t=[];rows.forEach(r=>r.forEach((c,i)=>{if(i>=from&&typeof c==='number')t[i]=(t[i]||0)+c;}));return t;}
+function pRMkt(){
+  const L=B.d.leads.filter(l=>inP(l.tanggal)),F=realFU().filter(f=>inP(f.tanggal));
+  const names=uniq(L.map(l=>l.marketing).concat(B.d.users.filter(u=>u.peran==='Marketing'&&u.aktif!=='Tidak').map(u=>u.nama)));
+  const rows=names.map(n=>{const x=L.filter(l=>l.marketing===n),c=fn=>x.filter(fn).length,ser=c(l=>l.sales),deal=c(l=>l.statusSales==='Deal');
+    return [n,x.length,c(l=>l.statusLead==='Cold'),c(l=>l.statusLead==='Warm'),c(l=>l.statusLead==='Hot'),ser,deal,F.filter(f=>f.oleh===n).length,pct(deal,ser)];});
+  const t=sumCols(rows,1);
+  $('#pg').innerHTML='<div class="panel"><h3>Kinerja Marketing</h3><div class="sm mut" style="margin-bottom:10px">Lead dihitung dari tanggal input; follow up dihitung dari tanggal follow up.</div>'+
+    tbl(['Marketing','Leads','Cold','Warm','Hot','Diserahkan','Deal','Follow Up','Konversi'],rows,['TOTAL',t[1]||0,t[2]||0,t[3]||0,t[4]||0,t[5]||0,t[6]||0,t[7]||0,pct(t[6]||0,t[5]||0)])+'</div>';
+}
+function pRSales(){
+  const L=B.d.leads.filter(l=>l.sales&&inP(l.tglSerah)),F=realFU().filter(f=>inP(f.tanggal));
+  const names=uniq(L.map(l=>l.sales).concat(B.d.sales));
+  const rows=names.map(n=>{const x=L.filter(l=>l.sales===n),c=fn=>x.filter(fn).length,deal=c(l=>l.statusSales==='Deal');
+    return [n,x.length,c(l=>l.statusLead==='Hot'),c(l=>l.statusSales==='Progres'),c(l=>l.statusSales==='Quotation'),deal,F.filter(f=>f.oleh===n).length,pct(deal,x.length)];});
+  const t=sumCols(rows,1);
+  $('#pg').innerHTML='<div class="panel"><h3>Kinerja Sales</h3><div class="sm mut" style="margin-bottom:10px">Lead dihitung dari tanggal diserahkan; status sales adalah status terkini.</div>'+
+    tbl(['Sales','Diterima','Hot','Progres','Quotation','Deal','Follow Up','Konversi'],rows,['TOTAL',t[1]||0,t[2]||0,t[3]||0,t[4]||0,t[5]||0,t[6]||0,pct(t[5]||0,t[1]||0)])+'</div>';
+}
+function pRSumber(){
+  const L=B.d.leads.filter(l=>inP(l.tanggal));
+  const calc=x=>{const c=fn=>x.filter(fn).length,ser=c(l=>l.sales),deal=c(l=>l.statusSales==='Deal');return [x.length,c(l=>l.statusLead==='Cold'),c(l=>l.statusLead==='Warm'),c(l=>l.statusLead==='Hot'),ser,c(l=>l.statusSales==='Quotation'),deal,pct(deal,ser)];};
+  const r1=uniq(L.map(l=>l.sumber||'(kosong)')).map(s=>[s].concat(calc(L.filter(l=>(l.sumber||'(kosong)')===s)))).sort((a,b)=>b[1]-a[1]);
+  const keys=uniq(L.map(l=>(l.sumber||'(kosong)')+' — '+(l.detailSumber||'(tanpa detail)')));
+  const r2=keys.map(k=>[k].concat(calc(L.filter(l=>(l.sumber||'(kosong)')+' — '+(l.detailSumber||'(tanpa detail)')===k)))).sort((a,b)=>b[1]-a[1]);
+  const H=['Leads','Cold','Warm','Hot','Diserahkan','Quotation','Deal','Konversi'];
+  const t=sumCols(r1,1);
+  $('#pg').innerHTML='<div class="panel"><h3>Per Sumber Data</h3>'+tbl(['Sumber Data'].concat(H),r1,['TOTAL',t[1]||0,t[2]||0,t[3]||0,t[4]||0,t[5]||0,t[6]||0,t[7]||0,pct(t[7]||0,t[5]||0)])+'</div>'+
+    '<div class="panel"><h3>Per Event / Detail Sumber</h3>'+tbl(['Sumber — Event / Detail'].concat(H),r2)+'</div>';
+}
+
+/* ========== PENGGUNA ========== */
+function pUsers(){
+  B.editUser=null;
+  const U=B.d.users;
+  $('#pg').innerHTML=`<div class="panel"><h3 id="uTitle">Tambah Pengguna</h3>
+    <div class="frm"><div><label>Nama</label><input id="u_nama"></div><div><label>PIN (4–6 angka)</label><input id="u_pin" inputmode="numeric" maxlength="6"></div>
+    <div><label>Peran</label><select id="u_peran">${opts(ROLES,'Marketing')}</select></div><div><label>Aktif</label><select id="u_aktif"><option>Ya</option><option>Tidak</option></select></div></div>
+    <div class="row mt"><button class="btn" onclick="saveUser()">Simpan</button><button class="btn gray" onclick="pUsers()">Batal</button></div>
+    <div class="sm mut mt">Admin: akses Back Office & semua lead · Marketing: input lead, follow up, serahkan ke sales · Sales: lead yang diserahkan ke dirinya, follow up, update status.</div></div>
+    <div class="tw"><table><thead><tr><th>Nama</th><th>PIN</th><th>Peran</th><th>Aktif</th><th class="n">Lead</th><th></th></tr></thead><tbody>`+
+    U.map((u,i)=>{const n=B.d.leads.filter(l=>u.peran==='Sales'?l.sales===u.nama:l.marketing===u.nama).length;
+      return `<tr><td><b>${esc(u.nama)}</b></td><td>${esc(u.pin)}</td><td>${esc(u.peran)}</td><td>${u.aktif==='Tidak'?'<span class="b">Tidak</span>':'<span class="b Deal">Ya</span>'}</td><td class="n">${n}</td>
+      <td style="white-space:nowrap"><button class="btn sm ghost" onclick="editUser(${i})">Edit</button> <button class="btn sm gray" onclick="delUser(${i})">Hapus</button></td></tr>`;}).join('')+'</tbody></table></div>';
+}
+function editUser(i){
+  const u=B.d.users[i];B.editUser=u.nama;
+  $('#uTitle').textContent='Edit Pengguna: '+u.nama;
+  $('#u_nama').value=u.nama;$('#u_nama').disabled=true;$('#u_pin').value=u.pin;$('#u_peran').value=u.peran;$('#u_aktif').value=u.aktif==='Tidak'?'Tidak':'Ya';
+  window.scrollTo(0,0);
+}
+async function saveUser(){
+  const d={nama:$('#u_nama').value.trim(),pin:$('#u_pin').value.trim(),peran:$('#u_peran').value,aktif:$('#u_aktif').value};
+  if(!d.nama)return toast('Isi nama',1);if(!/^\d{4,6}$/.test(d.pin))return toast('PIN harus 4–6 angka',1);
+  await run('apiSaveUser',[d,!B.editUser],'Pengguna disimpan');
+}
+async function delUser(i){const u=B.d.users[i];if(!confirm('Hapus pengguna '+u.nama+'? Data lead miliknya tetap ada.'))return;await run('apiDeleteUser',[u.nama],'Pengguna dihapus');}
+
+/* ========== MASTER ========== */
+function pMaster(jenis){
+  B.mj=jenis;B.mlist=(jenis==='Sumber'?B.d.sumber:B.d.metode).slice();drawMaster();
+}
+function drawMaster(){
+  const lab=B.mj==='Sumber'?'sumber data (mis. Offline Event, Online Event, Pameran)':'metode follow up (mis. Telepon, WhatsApp Chat, WhatsApp Call)';
+  $('#pg').innerHTML=`<div class="panel" style="max-width:620px"><div class="sm mut" style="margin-bottom:8px">Daftar ${lab} yang muncul sebagai pilihan di aplikasi.</div>`+
+    B.mlist.map((v,i)=>`<div class="row mt"><input value="${esc(v)}" oninput="B.mlist[${i}]=this.value" style="flex:1"><button class="btn sm gray" onclick="B.mlist.splice(${i},1);drawMaster()">Hapus</button></div>`).join('')+
+    `<div class="row mt"><input id="mNew" placeholder="Tambah baru..." style="flex:1" onkeydown="if(event.key==='Enter')addM()"><button class="btn sm ghost" onclick="addM()">Tambah</button></div>
+    <button class="btn mt" onclick="saveM()">Simpan</button></div>`;
+}
+function addM(){const v=$('#mNew').value.trim();if(!v)return;B.mlist.push(v);drawMaster();$('#mNew').focus();}
+async function saveM(){await run('apiSaveMaster',[B.mj,B.mlist],'Master disimpan');}
+
+const PAGES={dash:pDash,leads:pLeads,fu:pFU,rmkt:pRMkt,rsales:pRSales,rsumber:pRSumber,users:pUsers,msumber:()=>pMaster('Sumber'),mmetode:()=>pMaster('Metode')};
+
+/* ========== INIT ========== */
+(async function(){
+  const t=ls('mlbo_tok');
+  if(!t){$('#login').style.display='block';return;}
+  B.token=t;busy(1);
+  try{B.d=await api('apiGetData',t);showApp();}catch(e){doLogout(true);}
+  busy(0);
+})();
+</script>
+</body>
+</html>
